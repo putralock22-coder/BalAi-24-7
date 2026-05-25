@@ -81,12 +81,16 @@ async function callOllama(messages) {
 }
 
 async function callOpenRouter(messages) {
+  const key = process.env.OPENROUTER_API_KEY || '';
+  if (!key || key.includes('your-openrouter-key')) {
+    throw new Error('OpenRouter API key belum diset');
+  }
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      'HTTP-Referer': 'http://localhost:3000',
+      'Authorization': `Bearer ${key}`,
+      'HTTP-Referer': 'https://balai-24-7-production.up.railway.app',
       'X-Title': 'BalAI Travel Assistant'
     },
     body: JSON.stringify({
@@ -95,11 +99,11 @@ async function callOpenRouter(messages) {
       max_tokens: 400,
       temperature: 0.7
     }),
-    signal: AbortSignal.timeout(20000)
+    signal: AbortSignal.timeout(30000)
   });
   if (!response.ok) {
     const err = await response.text();
-    throw new Error(`OpenRouter error ${response.status}: ${err}`);
+    throw new Error(`OpenRouter ${response.status}: ${err}`);
   }
   const data = await response.json();
   return data.choices[0]?.message?.content;
@@ -124,7 +128,7 @@ app.post('/api/chat', async (req, res) => {
       provider = 'openrouter';
     } catch (orErr) {
       console.error('[BalAI] OpenRouter also failed:', orErr.message);
-      return res.status(503).json({ error: 'Semua AI provider tidak tersedia saat ini. Coba lagi.' });
+      return res.status(503).json({ error: `OpenRouter error: ${orErr.message}` });
     }
   }
 
@@ -133,7 +137,14 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+  const key = process.env.OPENROUTER_API_KEY || '';
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    openrouter_key: key ? `${key.substring(0, 12)}...` : 'NOT SET',
+    openrouter_model: process.env.OPENROUTER_MODEL || 'not set',
+    ollama_url: process.env.OLLAMA_URL || 'not set',
+  });
 });
 
 const PORT = process.env.PORT || 3000;
