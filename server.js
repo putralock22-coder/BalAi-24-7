@@ -207,6 +207,8 @@ app.post('/api/chat', async (req, res) => {
 app.get('/api/health', (req, res) => {
   const orKey = process.env.OPENROUTER_API_KEY || '';
   const groqKey = process.env.GROQ_API_KEY || '';
+  const mtServer = process.env.MIDTRANS_SERVER_KEY || '';
+  const mtClient = process.env.MIDTRANS_CLIENT_KEY || '';
   res.json({
     status: 'ok',
     time: new Date().toISOString(),
@@ -214,6 +216,9 @@ app.get('/api/health', (req, res) => {
     openrouter_key: orKey ? `${orKey.substring(0, 12)}...` : 'NOT SET',
     openrouter_model: process.env.OPENROUTER_MODEL || 'not set',
     ollama_url: process.env.OLLAMA_URL || 'not set',
+    midtrans_env: process.env.MIDTRANS_ENV || 'NOT SET',
+    midtrans_server_key: mtServer ? `${mtServer.substring(0, 15)}...` : 'NOT SET',
+    midtrans_client_key: mtClient ? `${mtClient.substring(0, 15)}...` : 'NOT SET',
   });
 });
 
