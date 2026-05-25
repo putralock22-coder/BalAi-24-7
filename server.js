@@ -80,64 +80,83 @@ async function callOllama(messages) {
   return data.message?.content || data.response;
 }
 
-const FREE_MODELS = [
-  'deepseek/deepseek-v4-flash:free',
-  'google/gemma-4-31b-it:free',
-  'nousresearch/hermes-3-llama-3.1-405b:free',
-  'meta-llama/llama-3.2-3b-instruct:free',
-  'meta-llama/llama-3.3-70b-instruct:free',
+const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'gemma2-9b-it',
 ];
 
-async function callOpenRouter(messages) {
-  const key = process.env.OPENROUTER_API_KEY || '';
-  if (!key || key.includes('your-openrouter-key')) {
-    throw new Error('OpenRouter API key belum diset');
-  }
+async function callGroq(messages) {
+  const key = process.env.GROQ_API_KEY || '';
+  if (!key) throw new Error('GROQ_API_KEY belum diset');
 
-  const primaryModel = process.env.OPENROUTER_MODEL;
-  const models = primaryModel ? [primaryModel, ...FREE_MODELS.filter(m => m !== primaryModel)] : FREE_MODELS;
-  let lastError;
-
-  for (const model of models) {
+  for (const model of GROQ_MODELS) {
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${key}`,
-          'HTTP-Referer': 'https://balai-24-7-production.up.railway.app',
-          'X-Title': 'BalAI Travel Assistant'
         },
         body: JSON.stringify({
           model,
           messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
-          max_tokens: 400,
+          max_tokens: 500,
           temperature: 0.7
         }),
         signal: AbortSignal.timeout(30000)
       });
 
       if (response.status === 429) {
-        console.log(`[BalAI] Model ${model} rate-limited, trying next...`);
-        lastError = new Error(`${model} rate limited`);
+        console.log(`[BalAI] Groq model ${model} rate-limited, trying next...`);
         continue;
       }
       if (!response.ok) {
         const err = await response.text();
-        throw new Error(`OpenRouter ${response.status}: ${err}`);
+        throw new Error(`Groq ${response.status}: ${err}`);
       }
       const data = await response.json();
       const reply = data.choices[0]?.message?.content;
       if (reply) {
-        console.log(`[BalAI] Replied via openrouter/${model}`);
+        console.log(`[BalAI] Replied via groq/${model}`);
         return reply;
       }
     } catch (err) {
-      if (err.message.includes('rate limited')) { lastError = err; continue; }
+      if (err.message.includes('rate-limited')) continue;
       throw err;
     }
   }
-  throw lastError || new Error('Semua model OpenRouter tidak tersedia');
+  throw new Error('Semua model Groq tidak tersedia');
+}
+
+async function callOpenRouter(messages) {
+  const key = process.env.OPENROUTER_API_KEY || '';
+  if (!key || key.includes('your-openrouter-key')) {
+    throw new Error('OpenRouter API key belum diset');
+  }
+  const model = process.env.OPENROUTER_MODEL || 'meta-llama/llama-3.2-3b-instruct:free';
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${key}`,
+      'HTTP-Referer': 'https://balai-24-7-production.up.railway.app',
+      'X-Title': 'BalAI Travel Assistant'
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
+      max_tokens: 500,
+      temperature: 0.7
+    }),
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenRouter ${response.status}: ${err}`);
+  }
+  const data = await response.json();
+  return data.choices[0]?.message?.content;
 }
 
 app.post('/api/chat', async (req, res) => {
@@ -153,13 +172,19 @@ app.post('/api/chat', async (req, res) => {
     reply = await callOllama(messages);
     provider = 'ollama';
   } catch (ollamaErr) {
-    console.log('[BalAI] Ollama unavailable, falling back to OpenRouter:', ollamaErr.message);
+    console.log('[BalAI] Ollama unavailable, trying Groq:', ollamaErr.message);
     try {
-      reply = await callOpenRouter(messages);
-      provider = 'openrouter';
-    } catch (orErr) {
-      console.error('[BalAI] OpenRouter also failed:', orErr.message);
-      return res.status(503).json({ error: `OpenRouter error: ${orErr.message}` });
+      reply = await callGroq(messages);
+      provider = 'groq';
+    } catch (groqErr) {
+      console.log('[BalAI] Groq unavailable, trying OpenRouter:', groqErr.message);
+      try {
+        reply = await callOpenRouter(messages);
+        provider = 'openrouter';
+      } catch (orErr) {
+        console.error('[BalAI] All providers failed:', orErr.message);
+        return res.status(503).json({ error: `Semua AI provider tidak tersedia: ${orErr.message}` });
+      }
     }
   }
 
@@ -168,11 +193,13 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  const key = process.env.OPENROUTER_API_KEY || '';
+  const orKey = process.env.OPENROUTER_API_KEY || '';
+  const groqKey = process.env.GROQ_API_KEY || '';
   res.json({
     status: 'ok',
     time: new Date().toISOString(),
-    openrouter_key: key ? `${key.substring(0, 12)}...` : 'NOT SET',
+    groq_key: groqKey ? `${groqKey.substring(0, 12)}...` : 'NOT SET',
+    openrouter_key: orKey ? `${orKey.substring(0, 12)}...` : 'NOT SET',
     openrouter_model: process.env.OPENROUTER_MODEL || 'not set',
     ollama_url: process.env.OLLAMA_URL || 'not set',
   });
