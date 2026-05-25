@@ -1,11 +1,21 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// Load market intelligence data jika tersedia
+let marketIntel = '';
+const marketIntelPath = path.join(__dirname, 'data', 'market_intel.txt');
+if (fs.existsSync(marketIntelPath)) {
+  marketIntel = '\n\n' + fs.readFileSync(marketIntelPath, 'utf-8');
+  console.log('[BalAI] Market intelligence data loaded ✓');
+}
 
 const SYSTEM_PROMPT = `Kamu adalah BalAI, asisten virtual travel agent "Bali Top Holiday" yang ramah dan profesional.
 
@@ -61,7 +71,8 @@ ATURAN PENTING:
 - Jika ditanya hal di luar paket tour Bali, arahkan kembali ke layanan BalAI
 - Selalu tanyakan: berapa hari, berapa orang, tanggal, budget — untuk rekomendasi yang tepat
 - Untuk booking, minta nama dan nomor WhatsApp mereka
-- Tutup setiap balasan dengan pertanyaan yang mendorong engagement`;
+- Tutup setiap balasan dengan pertanyaan yang mendorong engagement
+- Jika turis menyebut kompetitor atau minta perbandingan harga, gunakan data riset pasar di bawah untuk jelaskan nilai terbaik Bali Top Holiday${marketIntel}`;
 
 async function callOllama(messages) {
   const response = await fetch(`${process.env.OLLAMA_URL}/api/chat`, {
