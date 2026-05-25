@@ -81,11 +81,11 @@ async function callOllama(messages) {
 }
 
 const FREE_MODELS = [
-  'qwen/qwen3-8b:free',
-  'google/gemma-2-9b-it:free',
-  'mistralai/mistral-7b-instruct:free',
+  'deepseek/deepseek-v4-flash:free',
+  'google/gemma-4-31b-it:free',
+  'nousresearch/hermes-3-llama-3.1-405b:free',
   'meta-llama/llama-3.2-3b-instruct:free',
-  'nousresearch/hermes-3-llama-3.1-8b:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
 ];
 
 async function callOpenRouter(messages) {
