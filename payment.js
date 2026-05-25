@@ -60,6 +60,7 @@ async function createPayment(planId, customerData) {
     callbacks: {
       finish: `https://balaiapp.com/payment/success?order_id=${orderId}`,
     },
+    notification_url: 'https://balaiapp.com/api/payment/webhook',
   };
 
   const token = await snap.createTransactionToken(parameter);
