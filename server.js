@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { createPayment, verifyPayment, PLANS } = require('./payment');
 
 const app = express();
 app.use(cors());
@@ -215,6 +216,82 @@ app.get('/api/health', (req, res) => {
     ollama_url: process.env.OLLAMA_URL || 'not set',
   });
 });
+
+// ── Payment endpoints ─────────────────────────────────────────────────────
+
+// Get available plans
+app.get('/api/plans', (req, res) => {
+  res.json(PLANS);
+});
+
+// Create payment token
+app.post('/api/payment/create', async (req, res) => {
+  const { planId, name, phone, email, businessName } = req.body;
+  if (!planId || !name || !phone) {
+    return res.status(400).json({ error: 'planId, name, dan phone wajib diisi' });
+  }
+  if (!process.env.MIDTRANS_SERVER_KEY) {
+    return res.status(503).json({ error: 'Payment belum dikonfigurasi' });
+  }
+  try {
+    const result = await createPayment(planId, { name, phone, email, businessName });
+    console.log(`[Payment] Order created: ${result.orderId} — ${result.plan.name}`);
+    res.json(result);
+  } catch (err) {
+    console.error('[Payment] Create error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Midtrans webhook — auto-notifikasi setelah client bayar
+app.post('/api/payment/webhook', async (req, res) => {
+  const { order_id, transaction_status, gross_amount, payment_type, customer_details } = req.body;
+  console.log(`[Webhook] ${order_id} — ${transaction_status}`);
+
+  if (['capture', 'settlement'].includes(transaction_status)) {
+    const planId = order_id.split('-')[1]?.toLowerCase();
+    const name   = customer_details?.first_name || '-';
+    const phone  = customer_details?.phone || '-';
+    const amount = parseInt(gross_amount).toLocaleString('id-ID');
+
+    // Log ke console (bisa disambungkan ke database/spreadsheet)
+    console.log(`\n✅ PEMBAYARAN DITERIMA`);
+    console.log(`   Order  : ${order_id}`);
+    console.log(`   Client : ${name} (${phone})`);
+    console.log(`   Paket  : ${planId}`);
+    console.log(`   Jumlah : Rp ${amount}`);
+    console.log(`   Metode : ${payment_type}\n`);
+
+    // Kirim notifikasi WA ke kamu via Fonnte/WA Gateway (opsional)
+    if (process.env.WA_NOTIFY_NUMBER && process.env.FONNTE_TOKEN) {
+      const msg = `🎉 *PEMBAYARAN MASUK!*\n\nClient: ${name}\nWA: ${phone}\nPaket: BalAI ${planId}\nJumlah: Rp ${amount}\nMetode: ${payment_type}\nOrder: ${order_id}\n\n_Segera setup BalAI untuk client ini!_`;
+      fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: { 'Authorization': process.env.FONNTE_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: process.env.WA_NOTIFY_NUMBER, message: msg })
+      }).catch(e => console.log('WA notify failed:', e.message));
+    }
+  }
+
+  res.json({ status: 'ok' });
+});
+
+// Payment success page redirect
+app.get('/payment/success', (req, res) => {
+  const { order_id } = req.query;
+  res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pembayaran Berhasil</title>
+  <meta http-equiv="refresh" content="5;url=/">
+  <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F7F1E6;margin:0}
+  .box{text-align:center;padding:40px;background:white;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.08);max-width:440px}
+  h1{color:#0D3B38;font-size:28px} p{color:#4A4A4A;line-height:1.6} .badge{font-size:60px;margin-bottom:16px}</style></head>
+  <body><div class="box"><div class="badge">🎉</div>
+  <h1>Pembayaran Berhasil!</h1>
+  <p>Terima kasih! Tim BalAI akan menghubungi kamu via WhatsApp dalam <strong>1 jam</strong> untuk mulai setup.</p>
+  <p style="color:#8A8A8A;font-size:13px;margin-top:16px">Order: ${order_id || '-'}<br>Mengalihkan ke halaman utama...</p>
+  </div></body></html>`);
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

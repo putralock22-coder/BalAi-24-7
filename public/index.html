@@ -220,6 +220,17 @@
   .form-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--ocean); margin-bottom:8px; text-align:center; }
   .form-desc { font-size:14px; color:var(--text-muted); text-align:center; margin-bottom:28px; }
 
+  .pay-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; }
+  .pay-modal-overlay.open { display:flex; }
+  .pay-modal { background:white; border-radius:16px; padding:36px; max-width:440px; width:90%; position:relative; }
+  .pay-modal h3 { font-family:'Cormorant Garamond',serif; font-size:24px; color:var(--ocean); margin-bottom:6px; }
+  .pay-modal .plan-price { font-size:20px; font-weight:600; color:var(--gold); margin-bottom:20px; }
+  .pay-modal input { width:100%; border:1px solid var(--cream-dark); border-radius:8px; padding:11px 14px; font-family:'DM Sans',sans-serif; font-size:14px; margin-bottom:12px; outline:none; background:var(--cream); }
+  .pay-modal input:focus { border-color:var(--teal); }
+  .pay-btn { width:100%; padding:14px; background:var(--gold); color:white; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:500; cursor:pointer; margin-top:4px; transition:background 0.2s; }
+  .pay-btn:hover { background:var(--gold-light); }
+  .pay-btn:disabled { background:#ccc; cursor:not-allowed; }
+  .pay-close { position:absolute; top:16px; right:20px; background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-muted); }
   .wa-float { position:fixed; bottom:28px; right:28px; background:#25D366; color:white; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; text-decoration:none; box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:999; transition:transform 0.2s; }
   .wa-float:hover{transform:scale(1.1);}
 
@@ -587,7 +598,7 @@
           <li data-id="3 bahasa (ID, EN, ZH)" data-en="3 languages (ID, EN, ZH)">3 bahasa (ID, EN, ZH)</li>
           <li data-id="Laporan mingguan" data-en="Weekly reports">Laporan mingguan</li>
         </ul>
-        <a href="#contact" class="price-cta" data-id="Mulai Sekarang" data-en="Get Started">Mulai Sekarang</a>
+        <button class="price-cta" onclick="openPayModal('starter','BalAI Starter','Rp 750.000 / bulan')" data-id="Mulai Sekarang" data-en="Get Started">Mulai Sekarang</button>
       </div>
       <div class="price-card featured">
         <div class="featured-badge" data-id="🔥 Paling Populer" data-en="🔥 Most Popular">🔥 Paling Populer</div>
@@ -603,7 +614,7 @@
           <li data-id="Notifikasi WA real-time ke kamu" data-en="Real-time WA notifications to you">Notifikasi WA real-time ke kamu</li>
           <li data-id="Support prioritas 7 hari seminggu" data-en="Priority support 7 days a week">Support prioritas 7 hari seminggu</li>
         </ul>
-        <a href="#contact" class="price-cta" data-id="Coba Gratis 7 Hari" data-en="Try Free 7 Days">Coba Gratis 7 Hari</a>
+        <button class="price-cta" onclick="openPayModal('professional','BalAI Professional','Rp 1.800.000 / bulan')" data-id="Coba Gratis 7 Hari" data-en="Try Free 7 Days">Coba Gratis 7 Hari</button>
       </div>
       <div class="price-card">
         <h3>Enterprise</h3>
@@ -617,7 +628,7 @@
           <li data-id="Dedicated account manager" data-en="Dedicated account manager">Dedicated account manager</li>
           <li data-id="Training tim kamu" data-en="Team training">Training tim kamu</li>
         </ul>
-        <a href="#contact" class="price-cta" data-id="Hubungi Kami" data-en="Contact Us">Hubungi Kami</a>
+        <button class="price-cta" onclick="openPayModal('enterprise','BalAI Enterprise','Custom')" data-id="Hubungi Kami" data-en="Contact Us">Hubungi Kami</button>
       </div>
     </div>
   </div>
@@ -665,6 +676,24 @@
 </footer>
 
 <a href="https://wa.me/6281234567890" class="wa-float" title="WhatsApp BalAI">💬</a>
+
+<!-- Payment Modal -->
+<div class="pay-modal-overlay" id="payModal">
+  <div class="pay-modal">
+    <button class="pay-close" onclick="closePayModal()">✕</button>
+    <h3 id="payPlanName">BalAI Professional</h3>
+    <div class="plan-price" id="payPlanPrice">Rp 1.800.000 / bulan</div>
+    <input type="hidden" id="payPlanId">
+    <input type="text" id="payName" placeholder="Nama lengkap kamu *">
+    <input type="tel" id="payPhone" placeholder="Nomor WhatsApp * (628xx)">
+    <input type="email" id="payEmail" placeholder="Email (opsional)">
+    <input type="text" id="payBusiness" placeholder="Nama bisnis travel kamu">
+    <button class="pay-btn" id="payBtn" onclick="submitPayment()">💳 Bayar Sekarang</button>
+    <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:12px">
+      Aman & terenkripsi · GoPay, OVO, QRIS, Transfer Bank
+    </p>
+  </div>
+</div>
 
 <script>
 // ── Language switcher ──────────────────────────────────────────────────────
@@ -782,6 +811,98 @@ function sendQR(btn) {
   const t = btn.getAttribute('data-' + L.val) || btn.textContent;
   document.getElementById('demoInput').value = t;
   sendDemo();
+}
+</script>
+
+<!-- Midtrans Snap -->
+<script src="https://app.sandbox.midtrans.com/snap/snap.js"
+  data-client-key="SB-Mid-client-xxxx"></script>
+
+<script>
+// ── Payment Modal ──────────────────────────────────────────────────────────
+function openPayModal(planId, planName, planPrice) {
+  document.getElementById('payPlanId').value    = planId;
+  document.getElementById('payPlanName').textContent  = planName;
+  document.getElementById('payPlanPrice').textContent = planPrice;
+  document.getElementById('payName').value    = '';
+  document.getElementById('payPhone').value   = '';
+  document.getElementById('payEmail').value   = '';
+  document.getElementById('payBusiness').value = '';
+  document.getElementById('payBtn').disabled  = false;
+  document.getElementById('payBtn').textContent = '💳 Bayar Sekarang';
+  document.getElementById('payModal').classList.add('open');
+}
+
+function closePayModal() {
+  document.getElementById('payModal').classList.remove('open');
+}
+
+// Tutup modal kalau klik di luar
+document.getElementById('payModal').addEventListener('click', function(e) {
+  if (e.target === this) closePayModal();
+});
+
+async function submitPayment() {
+  const planId   = document.getElementById('payPlanId').value;
+  const name     = document.getElementById('payName').value.trim();
+  const phone    = document.getElementById('payPhone').value.trim();
+  const email    = document.getElementById('payEmail').value.trim();
+  const business = document.getElementById('payBusiness').value.trim();
+
+  if (!name || !phone) {
+    alert('Nama dan nomor WhatsApp wajib diisi!');
+    return;
+  }
+
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Memproses...';
+
+  try {
+    const res = await fetch('/api/payment/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId, name, phone, email, businessName: business })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Fallback ke WhatsApp kalau Midtrans belum dikonfigurasi
+      if (data.error?.includes('belum dikonfigurasi')) {
+        closePayModal();
+        const msg = encodeURIComponent(`Halo BalAI! Saya ingin berlangganan.\n\nNama: ${name}\nWA: ${phone}\nBisnis: ${business || '-'}\nPaket: ${planId}`);
+        window.open(`https://wa.me/6281234567890?text=${msg}`, '_blank');
+        return;
+      }
+      throw new Error(data.error || 'Gagal membuat pembayaran');
+    }
+
+    // Buka Midtrans Snap popup
+    closePayModal();
+    window.snap.pay(data.token, {
+      onSuccess: (result) => {
+        window.location.href = `/payment/success?order_id=${result.order_id}`;
+      },
+      onPending: (result) => {
+        alert('✅ Pesanan dibuat! Selesaikan pembayaran sesuai instruksi yang dikirim.');
+      },
+      onError: (result) => {
+        alert('❌ Pembayaran gagal. Silakan coba lagi.');
+        btn.disabled = false;
+        btn.textContent = '💳 Bayar Sekarang';
+      },
+      onClose: () => {
+        btn.disabled = false;
+        btn.textContent = '💳 Bayar Sekarang';
+      }
+    });
+
+  } catch (err) {
+    alert('Error: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '💳 Bayar Sekarang';
+  }
 }
 </script>
 </body>
