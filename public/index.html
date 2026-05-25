@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BalAI — AI Assistant for Bali Travel Agents</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ocean: #0D3B38; --ocean-mid: #1A5E59; --teal: #2AA8A0; --teal-light: #7FD4CF;
+    --gold: #C8943A; --gold-light: #E8B96A; --cream: #F7F1E6; --cream-dark: #EDE4D3;
+    --white: #FFFFFF; --text-dark: #1C1C1C; --text-mid: #4A4A4A; --text-muted: #8A8A8A;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text-dark); overflow-x: hidden; }
+
+  .lang-bar { background: var(--ocean); padding: 10px 40px; display: flex; justify-content: flex-end; gap: 8px; }
+  .lang-btn { background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.7); padding: 4px 14px; border-radius: 20px; font-family: 'DM Sans',sans-serif; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .lang-btn.active { background: var(--gold); border-color: var(--gold); color: var(--white); }
+
+  nav { background: var(--ocean); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+  .logo { font-family: 'Cormorant Garamond',serif; font-size: 28px; font-weight: 600; color: var(--white); letter-spacing: 2px; }
+  .logo span { color: var(--gold-light); }
+  .nav-cta { background: var(--gold); color: var(--white); border: none; padding: 10px 24px; border-radius: 4px; font-family: 'DM Sans',sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s; }
+  .nav-cta:hover { background: var(--gold-light); }
+
+  .hero { background: linear-gradient(135deg, var(--ocean) 0%, var(--ocean-mid) 60%, #1D7A70 100%); min-height: 88vh; display: flex; align-items: center; padding: 80px 40px; position: relative; overflow: hidden; }
+  .hero::before { content:''; position:absolute; width:600px; height:600px; background: radial-gradient(circle, rgba(42,168,160,0.15) 0%, transparent 70%); top:-100px; right:-100px; border-radius:50%; }
+  .hero-content { max-width: 640px; position: relative; z-index: 1; }
+  .hero-badge { display:inline-block; background:rgba(200,148,58,0.2); border:1px solid rgba(200,148,58,0.5); color:var(--gold-light); font-size:12px; font-weight:500; letter-spacing:2px; text-transform:uppercase; padding:6px 16px; border-radius:20px; margin-bottom:28px; }
+  .hero h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(42px,6vw,70px); font-weight:600; color:var(--white); line-height:1.1; margin-bottom:12px; }
+  .hero h1 em { font-style:italic; color:var(--gold-light); }
+  .hero-sub { font-size:17px; color:var(--teal-light); font-weight:300; letter-spacing:1px; margin-bottom:24px; font-style:italic; }
+  .hero p { font-size:17px; color:rgba(255,255,255,0.75); line-height:1.7; margin-bottom:40px; max-width:520px; }
+  .hero-btns { display:flex; gap:16px; flex-wrap:wrap; }
+  .btn-primary { background:var(--gold); color:var(--white); border:none; padding:16px 36px; border-radius:4px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .btn-primary:hover { background:var(--gold-light); transform:translateY(-1px); }
+  .btn-outline { background:transparent; color:var(--white); border:1px solid rgba(255,255,255,0.4); padding:16px 36px; border-radius:4px; font-family:'DM Sans',sans-serif; font-size:16px; cursor:pointer; text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .btn-outline:hover { background:rgba(255,255,255,0.08); }
+
+  .hero-visual { position:absolute; right:60px; top:50%; transform:translateY(-50%); width:370px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:24px; backdrop-filter:blur(10px); }
+  @media(max-width:1050px){.hero-visual{display:none;}}
+  .chat-header { display:flex; align-items:center; gap:10px; margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .chat-avatar { width:36px; height:36px; background:var(--teal); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .chat-name { color:var(--white); font-size:14px; font-weight:500; }
+  .chat-status { color:var(--teal-light); font-size:12px; }
+  .chat-bubble { padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; margin-bottom:10px; max-width:88%; }
+  .bubble-bot { background:rgba(42,168,160,0.2); color:rgba(255,255,255,0.85); border-bottom-left-radius:4px; }
+  .bubble-user { background:rgba(200,148,58,0.25); color:rgba(255,255,255,0.85); margin-left:auto; text-align:right; border-bottom-right-radius:4px; }
+  .typing { display:flex; gap:4px; align-items:center; padding:10px 14px; background:rgba(42,168,160,0.15); border-radius:12px; border-bottom-left-radius:4px; width:fit-content; }
+  .typing-dot { width:6px; height:6px; background:var(--teal-light); border-radius:50%; animation:bounce 1.2s infinite; }
+  .typing-dot:nth-child(2){animation-delay:0.2s;} .typing-dot:nth-child(3){animation-delay:0.4s;}
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-6px);} }
+
+  .stats-bar { background:var(--cream-dark); padding:36px 40px; display:flex; justify-content:center; gap:60px; flex-wrap:wrap; }
+  .stat { text-align:center; }
+  .stat-num { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:600; color:var(--ocean); display:block; }
+  .stat-label { font-size:13px; color:var(--text-muted); }
+
+  section { padding:90px 40px; }
+  .section-inner { max-width:1100px; margin:0 auto; }
+  .section-tag { font-size:12px; font-weight:500; letter-spacing:3px; text-transform:uppercase; color:var(--teal); margin-bottom:16px; }
+  h2 { font-family:'Cormorant Garamond',serif; font-size:clamp(32px,4vw,48px); font-weight:600; color:var(--ocean); line-height:1.2; margin-bottom:16px; }
+  .section-desc { font-size:17px; color:var(--text-mid); line-height:1.7; max-width:560px; margin-bottom:56px; }
+
+  .pain-section { background:var(--ocean); }
+  .pain-section h2 { color:var(--white); }
+  .pain-section .section-tag { color:var(--teal-light); }
+  .pain-section .section-desc { color:rgba(255,255,255,0.65); max-width:600px; }
+  .pain-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:24px; }
+  .pain-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:28px 24px; transition:background 0.2s; }
+  .pain-card:hover{background:rgba(255,255,255,0.09);}
+  .pain-icon { font-size:28px; margin-bottom:16px; }
+  .pain-card h3 { font-size:17px; font-weight:500; color:var(--white); margin-bottom:8px; }
+  .pain-card p { font-size:14px; color:rgba(255,255,255,0.55); line-height:1.6; }
+
+  /* HOW IT WORKS */
+  .how-section { background: var(--white); }
+  .how-steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0; position:relative; }
+  .how-step { text-align:center; padding:32px 24px; position:relative; }
+  .how-step:not(:last-child)::after { content:'→'; position:absolute; right:-16px; top:48px; font-size:24px; color:var(--teal-light); display:none; }
+  @media(min-width:900px){ .how-step:not(:last-child)::after { display:block; } }
+  .how-circle { width:72px; height:72px; background:linear-gradient(135deg,var(--teal),var(--ocean-mid)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; margin:0 auto 20px; box-shadow:0 8px 24px rgba(42,168,160,0.3); }
+  .how-num { position:absolute; top:28px; left:50%; transform:translateX(26px); background:var(--gold); color:white; width:22px; height:22px; border-radius:50%; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .how-step h3 { font-size:16px; font-weight:600; color:var(--ocean); margin-bottom:10px; }
+  .how-step p { font-size:14px; color:var(--text-mid); line-height:1.6; }
+
+  .features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:32px; }
+  .feature-card { background:var(--white); border-radius:12px; padding:32px 28px; border:1px solid var(--cream-dark); transition:transform 0.2s,box-shadow 0.2s; }
+  .feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+  .feature-num { font-family:'Cormorant Garamond',serif; font-size:48px; font-weight:600; color:var(--cream-dark); display:block; margin-bottom:8px; }
+  .feature-card h3 { font-size:18px; font-weight:500; color:var(--ocean); margin-bottom:10px; }
+  .feature-card p { font-size:14px; color:var(--text-mid); line-height:1.7; }
+
+  /* PACKAGES */
+  .pkg-section { background: var(--cream-dark); }
+  .pkg-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; }
+  .pkg-card { background:var(--white); border-radius:16px; border:1px solid #ddd6c5; overflow:hidden; transition:transform 0.2s,box-shadow 0.2s; }
+  .pkg-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.1);}
+  .pkg-img { height:160px; display:flex; align-items:center; justify-content:center; font-size:48px; }
+  .pkg-img.ubud{background:linear-gradient(135deg,#1a5e59,#2aa8a0);}
+  .pkg-img.nusa{background:linear-gradient(135deg,#0d3b5e,#1a6e9e);}
+  .pkg-img.family{background:linear-gradient(135deg,#5e3b0d,#9e6e1a);}
+  .pkg-img.honeymoon{background:linear-gradient(135deg,#5e0d3b,#9e1a6e);}
+  .pkg-img.fullday{background:linear-gradient(135deg,#3b5e0d,#6e9e1a);}
+  .pkg-img.group{background:linear-gradient(135deg,#3b0d5e,#6e1a9e);}
+  .pkg-body { padding:20px; }
+  .pkg-tag { font-size:11px; font-weight:500; letter-spacing:1px; text-transform:uppercase; color:var(--teal); margin-bottom:8px; }
+  .pkg-card h3 { font-size:17px; font-weight:500; color:var(--ocean); margin-bottom:6px; }
+  .pkg-card p { font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:14px; }
+  .pkg-price { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--gold); }
+  .pkg-price span { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-muted); font-weight:400; }
+  .pkg-includes { margin-top:12px; padding-top:12px; border-top:1px solid var(--cream-dark); display:flex; flex-wrap:wrap; gap:6px; }
+  .pkg-badge { background:var(--cream); border:1px solid var(--cream-dark); border-radius:20px; padding:3px 10px; font-size:11px; color:var(--text-mid); }
+
+  /* DEMO */
+  .demo-wrapper { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+  @media(max-width:800px){.demo-wrapper{grid-template-columns:1fr;}}
+  .demo-left p { font-size:16px; color:var(--text-mid); line-height:1.7; margin-bottom:24px; }
+  .demo-point { display:flex; gap:12px; margin-bottom:16px; align-items:flex-start; }
+  .demo-check { background:var(--teal); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; margin-top:2px; }
+  .demo-point span { font-size:15px; color:var(--text-mid); line-height:1.5; }
+
+  .demo-chat { background:var(--white); border-radius:16px; border:1px solid var(--cream-dark); overflow:hidden; box-shadow:0 8px 40px rgba(0,0,0,0.08); }
+  .demo-chat-header { background:var(--ocean); padding:16px 20px; display:flex; align-items:center; gap:10px; }
+  .demo-avatar { width:34px; height:34px; background:var(--teal); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .demo-bot-name { color:var(--white); font-size:14px; font-weight:500; }
+  .demo-online { color:var(--teal-light); font-size:11px; }
+  .ai-badge { margin-left:auto; background:rgba(42,168,160,0.3); color:var(--teal-light); font-size:10px; padding:2px 8px; border-radius:10px; border:1px solid rgba(42,168,160,0.4); }
+  .demo-messages { padding:20px; min-height:300px; max-height:400px; overflow-y:auto; scroll-behavior:smooth; }
+  .dmsg { margin-bottom:12px; display:flex; flex-direction:column; }
+  .dmsg.bot .dmsg-bubble { background:#F0F8F7; color:var(--text-dark); border-radius:12px 12px 12px 4px; align-self:flex-start; max-width:85%; }
+  .dmsg.user .dmsg-bubble { background:var(--ocean); color:var(--white); border-radius:12px 12px 4px 12px; align-self:flex-end; max-width:85%; text-align:right; }
+  .dmsg-bubble { padding:10px 14px; font-size:13px; line-height:1.6; }
+  .dmsg-time { font-size:11px; color:var(--text-muted); margin-top:4px; }
+  .dmsg.user .dmsg-time { text-align:right; }
+  .typing-indicator { display:flex; gap:4px; align-items:center; padding:12px 16px; background:#F0F8F7; border-radius:12px 12px 12px 4px; align-self:flex-start; width:fit-content; margin-bottom:12px; }
+  .typing-indicator .dot { width:7px; height:7px; background:var(--teal); border-radius:50%; animation:bounce 1.2s infinite; }
+  .typing-indicator .dot:nth-child(2){animation-delay:0.2s;} .typing-indicator .dot:nth-child(3){animation-delay:0.4s;}
+  .demo-input-bar { padding:14px 20px; border-top:1px solid var(--cream-dark); display:flex; gap:10px; }
+  .demo-input { flex:1; border:1px solid var(--cream-dark); border-radius:8px; padding:10px 16px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-dark); background:var(--cream); outline:none; }
+  .demo-input:focus{border-color:var(--teal);}
+  .demo-send { background:var(--teal); color:white; border:none; width:38px; height:38px; border-radius:8px; cursor:pointer; font-size:16px; transition:background 0.2s; }
+  .demo-send:hover{background:var(--ocean-mid);}
+  .demo-send:disabled{background:#ccc;cursor:not-allowed;}
+  .quick-replies { padding:0 20px 14px; display:flex; flex-wrap:wrap; gap:7px; }
+  .qr-btn { background:var(--cream); border:1px solid var(--cream-dark); border-radius:20px; padding:5px 13px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--ocean); cursor:pointer; transition:all 0.2s; }
+  .qr-btn:hover{background:var(--ocean);color:white;border-color:var(--ocean);}
+  .provider-tag { font-size:10px; color:var(--text-muted); text-align:right; padding:0 20px 8px; }
+
+  /* TESTIMONIALS */
+  .testi-section { background:var(--ocean); }
+  .testi-section h2 { color:var(--white); }
+  .testi-section .section-tag { color:var(--teal-light); }
+  .testi-section .section-desc { color:rgba(255,255,255,0.65); }
+  .testi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:24px; }
+  .testi-card { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:16px; padding:28px; transition:background 0.2s; }
+  .testi-card:hover { background:rgba(255,255,255,0.1); }
+  .testi-stars { color:var(--gold-light); font-size:16px; margin-bottom:14px; letter-spacing:2px; }
+  .testi-quote { font-size:15px; color:rgba(255,255,255,0.8); line-height:1.7; margin-bottom:20px; font-style:italic; }
+  .testi-quote::before { content:'"'; font-family:'Cormorant Garamond',serif; font-size:40px; color:var(--teal); line-height:0; vertical-align:-16px; margin-right:4px; }
+  .testi-author { display:flex; align-items:center; gap:12px; }
+  .testi-avatar { width:44px; height:44px; border-radius:50%; background:var(--teal); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .testi-name { font-size:14px; font-weight:600; color:var(--white); }
+  .testi-biz { font-size:12px; color:var(--teal-light); }
+
+  /* FAQ */
+  .faq-section { background:var(--cream-dark); }
+  .faq-list { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
+  .faq-item { background:var(--white); border-radius:12px; border:1px solid #ddd6c5; overflow:hidden; }
+  .faq-question { padding:20px 24px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; gap:16px; }
+  .faq-question h3 { font-size:16px; font-weight:500; color:var(--ocean); }
+  .faq-icon { color:var(--teal); font-size:20px; transition:transform 0.3s; flex-shrink:0; }
+  .faq-item.open .faq-icon { transform:rotate(45deg); }
+  .faq-answer { max-height:0; overflow:hidden; transition:max-height 0.35s ease, padding 0.2s; }
+  .faq-item.open .faq-answer { max-height:300px; }
+  .faq-answer p { padding:0 24px 20px; font-size:14px; color:var(--text-mid); line-height:1.7; }
+
+  /* PRICING */
+  .pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:28px; }
+  .price-card { background:var(--white); border:1px solid var(--cream-dark); border-radius:16px; padding:36px 32px; transition:transform 0.2s; }
+  .price-card:hover{transform:translateY(-4px);}
+  .price-card.featured { background:var(--ocean); border-color:var(--ocean); }
+  .price-card.featured h3,.price-card.featured .price-amount,.price-card.featured li{color:var(--white);}
+  .price-card.featured .price-desc,.price-card.featured .price-period{color:rgba(255,255,255,0.6);}
+  .price-card.featured .price-list{border-color:rgba(255,255,255,0.12);}
+  .featured-badge { display:inline-block; background:var(--gold); color:white; font-size:11px; font-weight:500; letter-spacing:1px; text-transform:uppercase; padding:4px 12px; border-radius:20px; margin-bottom:20px; }
+  .price-card h3 { font-size:20px; font-weight:500; color:var(--ocean); margin-bottom:8px; }
+  .price-desc { font-size:14px; color:var(--text-muted); margin-bottom:24px; }
+  .price-amount { font-family:'Cormorant Garamond',serif; font-size:40px; font-weight:600; color:var(--ocean); line-height:1; }
+  .price-period { font-size:14px; color:var(--text-muted); margin-bottom:28px; }
+  .price-list { list-style:none; border-top:1px solid var(--cream-dark); padding-top:24px; display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+  .price-list li { font-size:14px; color:var(--text-mid); padding-left:22px; position:relative; }
+  .price-list li::before { content:'✓'; position:absolute; left:0; color:var(--teal); font-weight:600; }
+  .price-card.featured .price-list li::before{color:var(--gold-light);}
+  .price-cta { width:100%; padding:14px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:all 0.2s; border:2px solid var(--ocean); background:transparent; color:var(--ocean); text-align:center; display:block; text-decoration:none; }
+  .price-card.featured .price-cta{background:var(--gold);border-color:var(--gold);color:var(--white);}
+  .price-cta:hover{opacity:0.85;}
+
+  .cta-section { background:linear-gradient(135deg,var(--ocean) 0%,var(--ocean-mid) 100%); text-align:center; }
+  .cta-section h2{color:var(--white);margin:0 auto 16px;max-width:700px;}
+  .cta-section p{color:rgba(255,255,255,0.65);font-size:17px;margin-bottom:40px;}
+  .cta-section .section-tag{color:var(--teal-light);}
+
+  footer { background:#07201E; padding:40px; text-align:center; color:rgba(255,255,255,0.4); font-size:13px; }
+  footer .logo-ft{font-family:'Cormorant Garamond',serif;font-size:22px;margin-bottom:12px;display:block;color:white;}
+  footer a{color:rgba(255,255,255,0.4);text-decoration:none;}
+
+  .contact-form-section { background: var(--cream-dark); }
+  .form-wrap { background:var(--white); border-radius:16px; padding:40px; max-width:640px; margin:0 auto; border:1px solid #ddd6c5; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media(max-width:600px){.form-row{grid-template-columns:1fr;}}
+  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+  .form-group label { font-size:13px; font-weight:500; color:var(--text-mid); }
+  .form-group input, .form-group select, .form-group textarea { border:1px solid var(--cream-dark); border-radius:8px; padding:11px 14px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-dark); background:var(--cream); outline:none; transition:border-color 0.2s; }
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--teal);}
+  .form-submit { width:100%; padding:14px; background:var(--ocean); color:white; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:16px; font-weight:500; cursor:pointer; transition:background 0.2s; margin-top:8px; }
+  .form-submit:hover{background:var(--ocean-mid);}
+  .form-title { font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:var(--ocean); margin-bottom:8px; text-align:center; }
+  .form-desc { font-size:14px; color:var(--text-muted); text-align:center; margin-bottom:28px; }
+
+  .wa-float { position:fixed; bottom:28px; right:28px; background:#25D366; color:white; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; text-decoration:none; box-shadow:0 4px 20px rgba(0,0,0,0.2); z-index:999; transition:transform 0.2s; }
+  .wa-float:hover{transform:scale(1.1);}
+
+  @media(max-width:600px){
+    nav{padding:16px 20px;} .hero{padding:60px 20px;} section{padding:60px 20px;}
+    .stats-bar{padding:24px 20px;gap:32px;} .lang-bar{padding:8px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="lang-bar">
+  <button class="lang-btn active" onclick="setLang('id')" id="btn-id">🇮🇩 Indonesia</button>
+  <button class="lang-btn" onclick="setLang('en')" id="btn-en">🇬🇧 English</button>
+</div>
+
+<nav>
+  <div class="logo">Bal<span>AI</span></div>
+  <a href="#contact" class="nav-cta" data-id="Coba Gratis" data-en="Try Free">Coba Gratis</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge" data-id="🤖 AI untuk Travel Agent Bali" data-en="🤖 AI for Bali Travel Agents">🤖 AI untuk Travel Agent Bali</div>
+    <h1 data-id="Jangan Lewatkan <em>Satu Pun</em> Inquiry Turis" data-en="Never Miss <em>A Single</em> Tourist Inquiry">Jangan Lewatkan <em>Satu Pun</em> Inquiry Turis</h1>
+    <p class="hero-sub" data-id="Your 24/7 AI Travel Assistant — in Bahasa, English & More" data-en="Your 24/7 AI Travel Assistant — in Bahasa, English & More">Your 24/7 AI Travel Assistant — in Bahasa, English & More</p>
+    <p data-id="BalAI membalas inquiry turis otomatis di WhatsApp, Instagram & website — kapanpun, dalam bahasa apapun. Seperti memiliki staff 24/7 tanpa biaya gaji." data-en="BalAI automatically replies to tourist inquiries on WhatsApp, Instagram & your website — anytime, in any language. Like having 24/7 staff with no salary cost.">BalAI membalas inquiry turis otomatis di WhatsApp, Instagram & website — kapanpun, dalam bahasa apapun. Seperti memiliki staff 24/7 tanpa biaya gaji.</p>
+    <div class="hero-btns">
+      <a href="#demo" class="btn-primary" data-id="Coba Demo Gratis" data-en="Try Free Demo">Coba Demo Gratis</a>
+      <a href="#packages" class="btn-outline" data-id="Lihat Paket Tour" data-en="See Tour Packages">Lihat Paket Tour</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="chat-header">
+      <div class="chat-avatar">🌴</div>
+      <div>
+        <div class="chat-name">BalAI — Bali Top Holiday</div>
+        <div class="chat-status">● Online 24/7</div>
+      </div>
+    </div>
+    <div class="chat-bubble bubble-bot">Halo! Selamat datang di Bali Top Holiday 🌺 Ada yang bisa kami bantu?</div>
+    <div class="chat-bubble bubble-user">Hi! I want 4D3N tour for 2 people, budget $300</div>
+    <div class="chat-bubble bubble-bot">Perfect! Our BTH 477B package (4D3N) includes Tanah Lot, Kintamani, Nusa Penida & hotel. Starting from Rp 2.595.000/pax. Pickup from your hotel included! 🚗</div>
+    <div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat"><span class="stat-num">24/7</span><span class="stat-label" data-id="Selalu Online" data-en="Always Online">Selalu Online</span></div>
+  <div class="stat"><span class="stat-num">&lt; 3s</span><span class="stat-label" data-id="Waktu Respons" data-en="Response Time">Waktu Respons</span></div>
+  <div class="stat"><span class="stat-num">10+</span><span class="stat-label" data-id="Bahasa Didukung" data-en="Languages Supported">Bahasa Didukung</span></div>
+  <div class="stat"><span class="stat-num">3×</span><span class="stat-label" data-id="Lebih Banyak Konversi" data-en="More Conversions">Lebih Banyak Konversi</span></div>
+</div>
+
+<!-- PAIN -->
+<section class="pain-section">
+  <div class="section-inner">
+    <p class="section-tag" data-id="Masalah Nyata Travel Agent Bali" data-en="Real Problems for Bali Travel Agents">Masalah Nyata Travel Agent Bali</p>
+    <h2 data-id="Kehilangan Booking Setiap Malam" data-en="Losing Bookings Every Night">Kehilangan Booking Setiap Malam</h2>
+    <p class="section-desc" data-id="Turis dari Australia, Eropa, dan Asia kirim pesan saat kamu tidur. Besok paginya mereka sudah pesan ke kompetitor." data-en="Tourists from Australia, Europe, and Asia message while you sleep. By morning they've already booked with a competitor.">Turis dari Australia, Eropa, dan Asia kirim pesan saat kamu tidur. Besok paginya mereka sudah pesan ke kompetitor.</p>
+    <div class="pain-grid">
+      <div class="pain-card"><div class="pain-icon">😴</div><h3 data-id="Inquiry Tengah Malam" data-en="Midnight Inquiries">Inquiry Tengah Malam</h3><p data-id="Turis beda timezone tanya paket jam 2 pagi. Kamu tidur, mereka pergi ke kompetitor." data-en="Tourists in different timezones ask about packages at 2am. You sleep, they go to a competitor.">Turis beda timezone tanya paket jam 2 pagi. Kamu tidur, mereka pergi ke kompetitor.</p></div>
+      <div class="pain-card"><div class="pain-icon">💬</div><h3 data-id="Pertanyaan Berulang" data-en="Repetitive Questions">Pertanyaan Berulang</h3><p data-id="'Harga paket berapa?' 'Include hotel?' 'Pick-up dari Seminyak?' — dijawab puluhan kali sehari." data-en="'Package price?' 'Hotel included?' 'Pickup from Seminyak?' — answered dozens of times daily.">'Harga paket berapa?' 'Include hotel?' 'Pick-up dari Seminyak?' — dijawab puluhan kali sehari.</p></div>
+      <div class="pain-card"><div class="pain-icon">🌐</div><h3 data-id="Hambatan Bahasa" data-en="Language Barrier">Hambatan Bahasa</h3><p data-id="Turis Jepang, Korea, Rusia — susah balas cepat & profesional dalam bahasa mereka." data-en="Japanese, Korean, Russian tourists — hard to reply quickly and professionally in their language.">Turis Jepang, Korea, Rusia — susah balas cepat & profesional dalam bahasa mereka.</p></div>
+      <div class="pain-card"><div class="pain-icon">📉</div><h3 data-id="70% Pilih yang Pertama Balas" data-en="70% Choose Who Replies First">70% Pilih yang Pertama Balas</h3><p data-id="70% turis booking ke travel agent yang pertama merespons. Kecepatan = revenue." data-en="70% of tourists book with the travel agent that responds first. Speed = revenue.">70% turis booking ke travel agent yang pertama merespons. Kecepatan = revenue.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-section" id="how">
+  <div class="section-inner">
+    <p class="section-tag" style="text-align:center" data-id="Cara Kerja" data-en="How It Works">Cara Kerja</p>
+    <h2 style="text-align:center;margin:0 auto 16px" data-id="Siap dalam 3 Hari, Tanpa Ribet" data-en="Ready in 3 Days, No Hassle">Siap dalam 3 Hari, Tanpa Ribet</h2>
+    <p class="section-desc" style="text-align:center;margin:0 auto 56px;max-width:560px" data-id="Tidak perlu coding, tidak perlu server. Kami yang urus semuanya dari awal sampai siap pakai." data-en="No coding, no server needed. We handle everything from start to finish.">Tidak perlu coding, tidak perlu server. Kami yang urus semuanya dari awal sampai siap pakai.</p>
+    <div class="how-steps">
+      <div class="how-step">
+        <div style="position:relative;width:fit-content;margin:0 auto 20px;">
+          <div class="how-circle">📋</div>
+          <div class="how-num">1</div>
+        </div>
+        <h3 data-id="Kirim Katalog Tour" data-en="Send Tour Catalog">Kirim Katalog Tour</h3>
+        <p data-id="Cukup kirim daftar paket, harga, dan FAQ bisnis kamu ke tim BalAI via WhatsApp." data-en="Simply send your package list, prices, and business FAQ to the BalAI team via WhatsApp.">Cukup kirim daftar paket, harga, dan FAQ bisnis kamu ke tim BalAI via WhatsApp.</p>
+      </div>
+      <div class="how-step">
+        <div style="position:relative;width:fit-content;margin:0 auto 20px;">
+          <div class="how-circle">⚙️</div>
+          <div class="how-num">2</div>
+        </div>
+        <h3 data-id="Kami Training AI-nya" data-en="We Train the AI">Kami Training AI-nya</h3>
+        <p data-id="Tim kami memasukkan semua data bisnis kamu, training AI, dan menyesuaikan persona chatbot." data-en="Our team inputs all your business data, trains the AI, and customizes the chatbot persona.">Tim kami memasukkan semua data bisnis kamu, training AI, dan menyesuaikan persona chatbot.</p>
+      </div>
+      <div class="how-step">
+        <div style="position:relative;width:fit-content;margin:0 auto 20px;">
+          <div class="how-circle">🔌</div>
+          <div class="how-num">3</div>
+        </div>
+        <h3 data-id="Integrasi Platform" data-en="Platform Integration">Integrasi Platform</h3>
+        <p data-id="BalAI dipasang ke WhatsApp, Instagram DM, dan website kamu. Kami bantu step by step." data-en="BalAI is installed on your WhatsApp, Instagram DM, and website. We guide you step by step.">BalAI dipasang ke WhatsApp, Instagram DM, dan website kamu. Kami bantu step by step.</p>
+      </div>
+      <div class="how-step">
+        <div style="position:relative;width:fit-content;margin:0 auto 20px;">
+          <div class="how-circle">🚀</div>
+          <div class="how-num">4</div>
+        </div>
+        <h3 data-id="Go Live & Pantau" data-en="Go Live & Monitor">Go Live & Pantau</h3>
+        <p data-id="BalAI mulai balas turis 24/7. Kamu terima notifikasi & laporan konversi setiap minggu." data-en="BalAI starts replying to tourists 24/7. You receive weekly conversion reports & notifications.">BalAI mulai balas turis 24/7. Kamu terima notifikasi & laporan konversi setiap minggu.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PACKAGES -->
+<section class="pkg-section" id="packages">
+  <div class="section-inner">
+    <p class="section-tag" data-id="Contoh Paket Tour" data-en="Sample Tour Packages">Contoh Paket Tour</p>
+    <h2 data-id="BalAI Hafal Semua Paket Ini" data-en="BalAI Knows All These Packages">BalAI Hafal Semua Paket Ini</h2>
+    <p class="section-desc" data-id="BalAI diisi dengan katalog lengkap paket tour bisnis kamu — harga, itinerary, fasilitas — dan bisa menjawab turis secara akurat kapanpun." data-en="BalAI is loaded with your complete tour catalog — prices, itineraries, facilities — and can accurately answer tourists anytime.">BalAI diisi dengan katalog lengkap paket tour bisnis kamu — harga, itinerary, fasilitas — dan bisa menjawab turis secara akurat kapanpun.</p>
+    <div class="pkg-grid">
+      <div class="pkg-card">
+        <div class="pkg-img ubud">🌾</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="Paling Populer" data-en="Most Popular">Paling Populer</div>
+          <h3 data-id="Paket 3 Hari 2 Malam" data-en="3 Days 2 Nights Package">Paket 3 Hari 2 Malam</h3>
+          <p data-id="Uluwatu · Penglipuran · Kintamani · Tanah Lot · Tirta Empul. Cocok untuk pasangan & keluarga kecil." data-en="Uluwatu · Penglipuran · Kintamani · Tanah Lot · Tirta Empul. Perfect for couples & small families.">Uluwatu · Penglipuran · Kintamani · Tanah Lot · Tirta Empul</p>
+          <div class="pkg-price" data-id="Hubungi untuk Harga" data-en="Contact for Price">Hubungi untuk Harga</div>
+          <div class="pkg-includes">
+            <span class="pkg-badge">Hotel</span><span class="pkg-badge" data-id="Makan Siang" data-en="Lunch">Makan Siang</span>
+            <span class="pkg-badge">Driver</span><span class="pkg-badge" data-id="Tiket Masuk" data-en="Entry Tickets">Tiket Masuk</span>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-img nusa">🏝️</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="Terlaris" data-en="Best Seller">Terlaris</div>
+          <h3 data-id="Paket Bali & Nusa Penida 4H3M" data-en="Bali & Nusa Penida 4D3N">Paket Bali & Nusa Penida 4H3M</h3>
+          <p>Tanah Lot · Seminyak · Nusa Penida · Penglipuran · Kintamani</p>
+          <div class="pkg-price">Rp 2.595.000 <span data-id="/orang (5 pax)" data-en="/person (5 pax)">/orang (5 pax)</span></div>
+          <div class="pkg-includes">
+            <span class="pkg-badge">Hotel</span><span class="pkg-badge" data-id="Fastboat Nusa Penida" data-en="Nusa Penida Fastboat">Fastboat Nusa Penida</span><span class="pkg-badge">Driver</span>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-img family">👨‍👩‍👧‍👦</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="Keluarga" data-en="Family">Keluarga</div>
+          <h3 data-id="Paket Keluarga 5H4M" data-en="Family Package 5D4N">Paket Keluarga 5H4M</h3>
+          <p>Pantai Pandawa · Tanjung Benoa · Penglipuran · Kintamani · Tanah Lot</p>
+          <div class="pkg-price">Rp 10.950.000 <span data-id="/keluarga (2 dewasa + 2 anak)" data-en="/family (2 adults + 2 kids)">/keluarga (2+2)</span></div>
+          <div class="pkg-includes">
+            <span class="pkg-badge" data-id="4x Sarapan" data-en="4x Breakfast">4x Sarapan</span><span class="pkg-badge" data-id="4x Makan Siang" data-en="4x Lunch">4x Makan Siang</span><span class="pkg-badge" data-id="Asuransi" data-en="Insurance">Asuransi</span>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-img honeymoon">💑</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="Bulan Madu" data-en="Honeymoon">Bulan Madu</div>
+          <h3 data-id="Paket Honeymoon Bali 3H2M" data-en="Bali Honeymoon 3D2N">Paket Honeymoon Bali 3H2M</h3>
+          <p data-id="Sunset Dinner Jimbaran · Spa Ubud · Pantai Melasti · Uluwatu · Foto Profesional" data-en="Jimbaran Sunset Dinner · Ubud Spa · Melasti Beach · Uluwatu · Professional Photoshoot">Sunset Dinner Jimbaran · Spa Ubud · Pantai Melasti · Uluwatu · Foto Profesional</p>
+          <div class="pkg-price" data-id="Harga Spesial — Tanya Kami" data-en="Special Price — Ask Us">Harga Spesial — Tanya Kami</div>
+          <div class="pkg-includes">
+            <span class="pkg-badge">Romantic Setup</span><span class="pkg-badge">Private Car</span>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-img fullday">🌅</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="1 Hari" data-en="1 Day">1 Hari</div>
+          <h3 data-id="Full Day Tour (10-11 Jam)" data-en="Full Day Tour (10-11 Hours)">Full Day Tour (10-11 Jam)</h3>
+          <p data-id="Pilih destinasi favoritmu: Uluwatu, Ubud, Kintamani, atau kombinasi. Private tour." data-en="Choose your favorite destinations: Uluwatu, Ubud, Kintamani, or a combination. Private tour.">Pilih destinasi favoritmu: Uluwatu, Ubud, Kintamani, atau kombinasi. Private tour.</p>
+          <div class="pkg-price" data-id="Mulai Rp 450.000" data-en="From Rp 450,000">Mulai Rp 450.000<span data-id="/orang" data-en="/person">/orang</span></div>
+          <div class="pkg-includes">
+            <span class="pkg-badge" data-id="Makan Siang & Malam" data-en="Lunch & Dinner">Makan Siang & Malam</span><span class="pkg-badge">Guide</span>
+          </div>
+        </div>
+      </div>
+      <div class="pkg-card">
+        <div class="pkg-img group">🎉</div>
+        <div class="pkg-body">
+          <div class="pkg-tag" data-id="Rombongan" data-en="Group">Rombongan</div>
+          <h3 data-id="Paket Group (BALIjoy)" data-en="Group Package (BALIjoy)">Paket Group (BALIjoy)</h3>
+          <p data-id="Gathering kantor, reuni, study tour. Harga makin hemat makin banyak peserta." data-en="Office gatherings, reunions, study tours. Price gets cheaper with more participants.">Gathering kantor, reuni, study tour. Harga makin hemat makin banyak peserta.</p>
+          <div class="pkg-price">Rp 1.835.000 <span data-id="/orang (tergantung jumlah)" data-en="/person (depends on group size)">/pax</span></div>
+          <div class="pkg-includes">
+            <span class="pkg-badge">Bus AC</span><span class="pkg-badge">Guide</span><span class="pkg-badge" data-id="Harga Grup" data-en="Group Price">Harga Grup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--text-muted)" data-id="Semua paket include: penjemputan bandara dengan kalungan bunga · driver berbahasa Inggris · air mineral · asuransi Jasa Raharja" data-en="All packages include: airport pickup with flower garland · English-speaking driver · mineral water · Jasa Raharja insurance">Semua paket include: penjemputan bandara dengan kalungan bunga · driver berbahasa Inggris · air mineral · asuransi Jasa Raharja</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-inner">
+    <p class="section-tag" data-id="Apa yang BalAI Lakukan" data-en="What BalAI Does">Apa yang BalAI Lakukan</p>
+    <h2 data-id="AI yang Bekerja Saat Kamu Istirahat" data-en="AI That Works While You Rest">AI yang Bekerja Saat Kamu Istirahat</h2>
+    <p class="section-desc" data-id="Dilatih khusus dengan data bisnis travel kamu. Bisa menjawab, merekomendasikan, dan mengumpulkan leads secara otomatis." data-en="Trained specifically with your travel business data. Can answer, recommend, and collect leads automatically.">Dilatih khusus dengan data bisnis travel kamu. Bisa menjawab, merekomendasikan, dan mengumpulkan leads secara otomatis.</p>
+    <div class="features-grid">
+      <div class="feature-card"><span class="feature-num">01</span><h3 data-id="Balas Otomatis 24/7" data-en="Auto Reply 24/7">Balas Otomatis 24/7</h3><p data-id="Terhubung ke WhatsApp, Instagram DM & website. Setiap inquiry dibalas dalam detik — jam 3 pagi sekalipun." data-en="Connected to WhatsApp, Instagram DM & website. Every inquiry replied in seconds — even at 3am.">Terhubung ke WhatsApp, Instagram DM & website. Setiap inquiry dibalas dalam detik — jam 3 pagi sekalipun.</p></div>
+      <div class="feature-card"><span class="feature-num">02</span><h3 data-id="Paham 10+ Bahasa" data-en="Understands 10+ Languages">Paham 10+ Bahasa</h3><p data-id="Deteksi bahasa otomatis — balas dalam English, 日本語, 한국어, Русский, dan lainnya secara profesional." data-en="Automatic language detection — replies in English, 日本語, 한국어, Русский, and more professionally.">Deteksi bahasa otomatis — balas dalam English, 日本語, 한국어, Русский, dan lainnya secara profesional.</p></div>
+      <div class="feature-card"><span class="feature-num">03</span><h3 data-id="Rekomendasikan Paket" data-en="Recommend Packages">Rekomendasikan Paket</h3><p data-id="Tahu budget & preferensi turis, lalu rekomendasikan paket paling sesuai dari katalog kamu." data-en="Knows the tourist's budget & preferences, then automatically recommends the best package from your catalog.">Tahu budget & preferensi turis, lalu rekomendasikan paket paling sesuai dari katalog kamu.</p></div>
+      <div class="feature-card"><span class="feature-num">04</span><h3 data-id="Kumpulkan Data Leads" data-en="Collect Lead Data">Kumpulkan Data Leads</h3><p data-id="Nama, nomor WA, tanggal trip, jumlah orang — dikumpulkan otomatis & dikirim ke kamu real-time." data-en="Name, WhatsApp number, trip date, group size — collected automatically and sent to you in real-time.">Nama, nomor WA, tanggal trip, jumlah orang — dikumpulkan otomatis & dikirim ke kamu real-time.</p></div>
+      <div class="feature-card"><span class="feature-num">05</span><h3 data-id="Setup 3 Hari, Tanpa Coding" data-en="3-Day Setup, No Coding">Setup 3 Hari, Tanpa Coding</h3><p data-id="Kamu cukup berikan katalog tour & FAQ. Kami yang training dan pasang ke platform kamu." data-en="You just provide your tour catalog & FAQ. We train and install BalAI on your platforms.">Kamu cukup berikan katalog tour & FAQ. Kami yang training dan pasang ke platform kamu.</p></div>
+      <div class="feature-card"><span class="feature-num">06</span><h3 data-id="Laporan & Analytics" data-en="Reports & Analytics">Laporan & Analytics</h3><p data-id="Pantau inquiry, konversi, paket terpopuler, dan negara asal turis setiap minggu." data-en="Track inquiries, conversions, most popular packages, and tourist origins every week.">Pantau inquiry, konversi, paket terpopuler, dan negara asal turis setiap minggu.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo" style="background:var(--cream-dark)">
+  <div class="section-inner">
+    <div class="demo-wrapper">
+      <div class="demo-left">
+        <p class="section-tag" data-id="Demo Interaktif — AI Nyata" data-en="Interactive Demo — Real AI">Demo Interaktif — AI Nyata</p>
+        <h2 data-id="Coba BalAI Sekarang" data-en="Try BalAI Right Now">Coba BalAI Sekarang</h2>
+        <p data-id="Chatbot ini ditenagai AI nyata — bukan hanya keyword matching. Tanyakan apa saja seperti turis sungguhan." data-en="This chatbot is powered by real AI — not just keyword matching. Ask anything like a real tourist.">Chatbot ini ditenagai AI nyata — bukan hanya keyword matching. Tanyakan apa saja seperti turis sungguhan.</p>
+        <div class="demo-point"><div class="demo-check">✓</div><span data-id="Tanya harga & itinerary paket tour" data-en="Ask about tour package prices & itinerary">Tanya harga & itinerary paket tour</span></div>
+        <div class="demo-point"><div class="demo-check">✓</div><span data-id="Coba dalam bahasa Inggris atau bahasa lain" data-en="Try in English or another language">Coba dalam bahasa Inggris atau bahasa lain</span></div>
+        <div class="demo-point"><div class="demo-check">✓</div><span data-id="Minta rekomendasi paket honeymoon / keluarga" data-en="Request honeymoon / family package recommendation">Minta rekomendasi paket honeymoon / keluarga</span></div>
+        <div class="demo-point"><div class="demo-check">✓</div><span data-id="Tanya fasilitas & yang termasuk dalam paket" data-en="Ask about facilities & what's included in the package">Tanya fasilitas & yang termasuk dalam paket</span></div>
+      </div>
+      <div class="demo-chat">
+        <div class="demo-chat-header">
+          <div class="demo-avatar">🌴</div>
+          <div>
+            <div class="demo-bot-name">BalAI Assistant</div>
+            <div class="demo-online" id="demoStatus">● Online — Membalas dalam detik</div>
+          </div>
+          <div class="ai-badge" id="aiBadge">AI</div>
+        </div>
+        <div class="demo-messages" id="demoMessages">
+          <div class="dmsg bot">
+            <div class="dmsg-bubble" data-id="Halo! Selamat datang 🌺 Saya BalAI, asisten virtual yang siap membantu kamu temukan paket tour Bali terbaik. Mau tanya apa? 😊" data-en="Hello! Welcome 🌺 I'm BalAI, your virtual assistant ready to help you find the best Bali tour package. What would you like to know? 😊">Halo! Selamat datang 🌺 Saya BalAI, asisten virtual yang siap membantu kamu temukan paket tour Bali terbaik. Mau tanya apa? 😊</div>
+            <div class="dmsg-time" data-id="Baru saja" data-en="Just now">Baru saja</div>
+          </div>
+        </div>
+        <div class="quick-replies" id="quickReplies">
+          <button class="qr-btn" onclick="sendQR(this)" data-id="Paket 4H3M harganya?" data-en="4D3N package price?">Paket 4H3M harganya?</button>
+          <button class="qr-btn" onclick="sendQR(this)" data-id="Ada paket honeymoon?" data-en="Any honeymoon packages?">Ada paket honeymoon?</button>
+          <button class="qr-btn" onclick="sendQR(this)" data-id="Hotel pickup included?" data-en="Hotel pickup included?">Hotel pickup included?</button>
+          <button class="qr-btn" onclick="sendQR(this)" data-id="Paket keluarga 5 hari?" data-en="5-day family package?">Paket keluarga 5 hari?</button>
+        </div>
+        <div class="provider-tag" id="providerTag"></div>
+        <div class="demo-input-bar">
+          <input type="text" class="demo-input" id="demoInput" placeholder="Ketik pertanyaan kamu..." onkeypress="if(event.key==='Enter')sendDemo()">
+          <button class="demo-send" id="sendBtn" onclick="sendDemo()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testi-section">
+  <div class="section-inner">
+    <p class="section-tag" data-id="Kata Mereka" data-en="What They Say">Kata Mereka</p>
+    <h2 data-id="Travel Agent yang Sudah Merasakan Hasilnya" data-en="Travel Agents Who've Seen the Results">Travel Agent yang Sudah Merasakan Hasilnya</h2>
+    <p class="section-desc" data-id="Dari travel agent kecil hingga besar — BalAI sudah membantu mereka tidak kehilangan satu pun booking." data-en="From small to large travel agencies — BalAI has helped them not miss a single booking.">Dari travel agent kecil hingga besar — BalAI sudah membantu mereka tidak kehilangan satu pun booking.</p>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote" data-id="Sebelum pakai BalAI, saya sering kehilangan inquiry dari turis Australia yang tanya tengah malam. Sekarang semua terjawab otomatis dan booking naik 40%!" data-en="Before using BalAI, I often lost inquiries from Australian tourists asking at midnight. Now everything is answered automatically and bookings are up 40%!">Sebelum pakai BalAI, saya sering kehilangan inquiry dari turis Australia yang tanya tengah malam. Sekarang semua terjawab otomatis dan booking naik 40%!</p>
+        <div class="testi-author">
+          <div class="testi-avatar">🙋</div>
+          <div>
+            <div class="testi-name">Wayan Surya</div>
+            <div class="testi-biz">Bali Dream Tour — Seminyak</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote" data-id="Yang bikin saya kagum, BalAI bisa balas dalam bahasa Jepang dan Korea dengan sangat natural. Turis langsung percaya dan lanjut booking. Luar biasa!" data-en="What amazes me is that BalAI can reply in Japanese and Korean very naturally. Tourists immediately trust it and proceed to book. Amazing!">Yang bikin saya kagum, BalAI bisa balas dalam bahasa Jepang dan Korea dengan sangat natural. Turis langsung percaya dan lanjut booking. Luar biasa!</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👩</div>
+          <div>
+            <div class="testi-name">Made Dewi</div>
+            <div class="testi-biz">Dewi Bali Tours — Ubud</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote" data-id="Setup-nya cepat, cuma 2 hari dan langsung jalan. Tim BalAI sangat responsif dan membantu. ROI sudah terasa di bulan pertama — worth it banget!" data-en="Setup was fast, just 2 days and it was running. The BalAI team is very responsive and helpful. ROI was felt in the first month — totally worth it!">Setup-nya cepat, cuma 2 hari dan langsung jalan. Tim BalAI sangat responsif dan membantu. ROI sudah terasa di bulan pertama — worth it banget!</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👨</div>
+          <div>
+            <div class="testi-name">Ketut Agus</div>
+            <div class="testi-biz">Bali Joy Travel — Kuta</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section" id="faq">
+  <div class="section-inner">
+    <p class="section-tag" style="text-align:center" data-id="Pertanyaan Umum" data-en="Frequently Asked Questions">Pertanyaan Umum</p>
+    <h2 style="text-align:center;margin:0 auto 48px" data-id="Ada yang Masih Ragu?" data-en="Still Have Questions?">Ada yang Masih Ragu?</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h3 data-id="Apakah BalAI bisa diintegrasikan ke WhatsApp bisnis saya?" data-en="Can BalAI be integrated with my business WhatsApp?">Apakah BalAI bisa diintegrasikan ke WhatsApp bisnis saya?</h3>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-answer"><p data-id="Ya! BalAI mendukung WhatsApp Business API. Tim kami akan membantu proses integrasi dari awal hingga selesai. Biasanya selesai dalam 1-2 hari kerja." data-en="Yes! BalAI supports WhatsApp Business API. Our team will help with the integration process from start to finish. Usually done within 1-2 business days.">Ya! BalAI mendukung WhatsApp Business API. Tim kami akan membantu proses integrasi dari awal hingga selesai. Biasanya selesai dalam 1-2 hari kerja.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h3 data-id="Apakah saya perlu keahlian teknis untuk menggunakan BalAI?" data-en="Do I need technical expertise to use BalAI?">Apakah saya perlu keahlian teknis untuk menggunakan BalAI?</h3>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-answer"><p data-id="Tidak sama sekali! Kamu hanya perlu mengirimkan daftar paket dan FAQ bisnis kamu ke tim kami. Semua proses teknis — training AI, setup, integrasi — kami yang urus." data-en="Not at all! You just need to send your package list and business FAQ to our team. All technical processes — AI training, setup, integration — we handle it all.">Tidak sama sekali! Kamu hanya perlu mengirimkan daftar paket dan FAQ bisnis kamu ke tim kami. Semua proses teknis — training AI, setup, integrasi — kami yang urus.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h3 data-id="Bagaimana jika AI salah menjawab pertanyaan turis?" data-en="What if the AI answers a tourist's question incorrectly?">Bagaimana jika AI salah menjawab pertanyaan turis?</h3>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-answer"><p data-id="BalAI hanya menjawab berdasarkan data yang kamu berikan, sehingga sangat akurat. Untuk pertanyaan kompleks, BalAI akan mengarahkan turis ke kamu langsung via WhatsApp. Kamu juga bisa update data kapan saja." data-en="BalAI only answers based on the data you provide, so it's very accurate. For complex questions, BalAI will direct tourists to you directly via WhatsApp. You can also update the data at any time.">BalAI hanya menjawab berdasarkan data yang kamu berikan, sehingga sangat akurat. Untuk pertanyaan kompleks, BalAI akan mengarahkan turis ke kamu langsung via WhatsApp. Kamu juga bisa update data kapan saja.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h3 data-id="Apakah ada garansi uang kembali?" data-en="Is there a money-back guarantee?">Apakah ada garansi uang kembali?</h3>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-answer"><p data-id="Ya! Kami memberikan garansi uang kembali 30 hari tanpa syarat. Jika kamu tidak puas dalam 30 hari pertama, kami kembalikan uangmu sepenuhnya." data-en="Yes! We offer a 30-day unconditional money-back guarantee. If you're not satisfied within the first 30 days, we'll fully refund your money.">Ya! Kami memberikan garansi uang kembali 30 hari tanpa syarat. Jika kamu tidak puas dalam 30 hari pertama, kami kembalikan uangmu sepenuhnya.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <h3 data-id="Berapa banyak paket tour yang bisa dimasukkan?" data-en="How many tour packages can be added?">Berapa banyak paket tour yang bisa dimasukkan?</h3>
+          <div class="faq-icon">+</div>
+        </div>
+        <div class="faq-answer"><p data-id="Tidak ada batasan! Kamu bisa memasukkan seluruh katalog paket tourmu — puluhan bahkan ratusan paket. BalAI akan mengingat dan merekomendasikan paket yang paling sesuai dengan kebutuhan setiap turis." data-en="No limits! You can add your entire tour catalog — dozens or even hundreds of packages. BalAI will remember and recommend the most suitable package for each tourist's needs.">Tidak ada batasan! Kamu bisa memasukkan seluruh katalog paket tourmu — puluhan bahkan ratusan paket. BalAI akan mengingat dan merekomendasikan paket yang paling sesuai dengan kebutuhan setiap turis.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-inner">
+    <p class="section-tag" data-id="Harga Layanan BalAI" data-en="BalAI Service Pricing">Harga Layanan BalAI</p>
+    <h2 data-id="Satu Booking Ekstra Sudah Balik Modal" data-en="One Extra Booking Covers the Cost">Satu Booking Ekstra Sudah Balik Modal</h2>
+    <p class="section-desc" data-id="Investasi yang langsung terasa hasilnya. Pilih paket sesuai skala bisnis kamu." data-en="An investment you'll feel immediately. Choose the package that fits your business scale.">Investasi yang langsung terasa hasilnya. Pilih paket sesuai skala bisnis kamu.</p>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <h3>Starter</h3>
+        <p class="price-desc" data-id="Untuk travel agent yang baru mulai" data-en="For travel agents just starting out">Untuk travel agent yang baru mulai</p>
+        <div class="price-amount">Rp 750K</div>
+        <div class="price-period" data-id="per bulan" data-en="per month">per bulan</div>
+        <ul class="price-list">
+          <li data-id="Chatbot website" data-en="Website chatbot">Chatbot website</li>
+          <li data-id="500 percakapan/bulan" data-en="500 conversations/month">500 percakapan/bulan</li>
+          <li data-id="3 bahasa (ID, EN, ZH)" data-en="3 languages (ID, EN, ZH)">3 bahasa (ID, EN, ZH)</li>
+          <li data-id="Laporan mingguan" data-en="Weekly reports">Laporan mingguan</li>
+        </ul>
+        <a href="#contact" class="price-cta" data-id="Mulai Sekarang" data-en="Get Started">Mulai Sekarang</a>
+      </div>
+      <div class="price-card featured">
+        <div class="featured-badge" data-id="🔥 Paling Populer" data-en="🔥 Most Popular">🔥 Paling Populer</div>
+        <h3>Professional</h3>
+        <p class="price-desc" data-id="Untuk bisnis yang aktif & ingin tumbuh" data-en="For active businesses that want to grow">Untuk bisnis yang aktif & ingin tumbuh</p>
+        <div class="price-amount">Rp 1.8JT</div>
+        <div class="price-period" data-id="per bulan" data-en="per month">per bulan</div>
+        <ul class="price-list">
+          <li data-id="WhatsApp + Instagram + Website" data-en="WhatsApp + Instagram + Website">WhatsApp + Instagram + Website</li>
+          <li data-id="Percakapan tidak terbatas" data-en="Unlimited conversations">Percakapan tidak terbatas</li>
+          <li data-id="10+ bahasa termasuk JP, KR, RU" data-en="10+ languages including JP, KR, RU">10+ bahasa termasuk JP, KR, RU</li>
+          <li data-id="Auto-kumpulkan leads ke spreadsheet" data-en="Auto-collect leads to spreadsheet">Auto-kumpulkan leads ke spreadsheet</li>
+          <li data-id="Notifikasi WA real-time ke kamu" data-en="Real-time WA notifications to you">Notifikasi WA real-time ke kamu</li>
+          <li data-id="Support prioritas 7 hari seminggu" data-en="Priority support 7 days a week">Support prioritas 7 hari seminggu</li>
+        </ul>
+        <a href="#contact" class="price-cta" data-id="Coba Gratis 7 Hari" data-en="Try Free 7 Days">Coba Gratis 7 Hari</a>
+      </div>
+      <div class="price-card">
+        <h3>Enterprise</h3>
+        <p class="price-desc" data-id="Untuk agen besar, grup & korporat" data-en="For large agencies, groups & corporates">Untuk agen besar, grup & korporat</p>
+        <div class="price-amount" data-id="Custom" data-en="Custom">Custom</div>
+        <div class="price-period" data-id="Harga disesuaikan" data-en="Tailored pricing">Harga disesuaikan</div>
+        <ul class="price-list">
+          <li data-id="Semua fitur Professional" data-en="All Professional features">Semua fitur Professional</li>
+          <li data-id="Integrasi sistem booking" data-en="Booking system integration">Integrasi sistem booking</li>
+          <li data-id="Branding & persona custom" data-en="Custom branding & persona">Branding & persona custom</li>
+          <li data-id="Dedicated account manager" data-en="Dedicated account manager">Dedicated account manager</li>
+          <li data-id="Training tim kamu" data-en="Team training">Training tim kamu</li>
+        </ul>
+        <a href="#contact" class="price-cta" data-id="Hubungi Kami" data-en="Contact Us">Hubungi Kami</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT FORM -->
+<section class="contact-form-section" id="contact">
+  <div class="section-inner">
+    <div class="form-wrap">
+      <div class="form-title" data-id="Mulai Gratis — Setup 3 Hari" data-en="Start Free — 3-Day Setup">Mulai Gratis — Setup 3 Hari</div>
+      <div class="form-desc" data-id="Isi form di bawah, tim kami akan hubungi kamu via WhatsApp dalam 1 jam." data-en="Fill in the form below, our team will contact you via WhatsApp within 1 hour.">Isi form di bawah, tim kami akan hubungi kamu via WhatsApp dalam 1 jam.</div>
+      <div class="form-row">
+        <div class="form-group"><label data-id="Nama Kamu" data-en="Your Name">Nama Kamu</label><input type="text" id="fName" placeholder="Wayan Surya"></div>
+        <div class="form-group"><label data-id="Nomor WhatsApp" data-en="WhatsApp Number">Nomor WhatsApp</label><input type="text" id="fWA" placeholder="+62 812 xxxx xxxx"></div>
+      </div>
+      <div class="form-group"><label data-id="Nama Bisnis Travel Kamu" data-en="Your Travel Business Name">Nama Bisnis Travel Kamu</label><input type="text" id="fBiz" placeholder="Bali Top Holiday"></div>
+      <div class="form-group">
+        <label data-id="Platform yang Mau Diintegrasikan" data-en="Platforms to Integrate">Platform yang Mau Diintegrasikan</label>
+        <select id="fPlatform">
+          <option data-id="WhatsApp + Website" data-en="WhatsApp + Website">WhatsApp + Website</option>
+          <option data-id="WhatsApp + Instagram" data-en="WhatsApp + Instagram">WhatsApp + Instagram</option>
+          <option data-id="Semua Platform" data-en="All Platforms">Semua Platform</option>
+          <option data-id="Website saja" data-en="Website only">Website saja</option>
+        </select>
+      </div>
+      <button class="form-submit" data-id="💬 Hubungi via WhatsApp →" data-en="💬 Contact via WhatsApp →" onclick="openWA()">💬 Hubungi via WhatsApp →</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="section-inner">
+    <p class="section-tag" data-id="Mulai Hari Ini" data-en="Start Today">Mulai Hari Ini</p>
+    <h2 data-id="Siap Tidak Kehilangan Booking Lagi?" data-en="Ready to Stop Losing Bookings?">Siap Tidak Kehilangan Booking Lagi?</h2>
+    <p data-id="Setup 3 hari. Tidak perlu coding. Garansi uang kembali 30 hari." data-en="3-day setup. No coding needed. 30-day money-back guarantee.">Setup 3 hari. Tidak perlu coding. Garansi uang kembali 30 hari.</p>
+    <a href="https://wa.me/6281234567890?text=Halo%20BalAI%2C%20saya%20ingin%20coba%20demo%20gratis%20untuk%20bisnis%20travel%20saya" class="btn-primary" style="font-size:17px;padding:18px 44px;" data-id="💬 Chat WhatsApp Sekarang" data-en="💬 Chat on WhatsApp Now">💬 Chat WhatsApp Sekarang</a>
+  </div>
+</section>
+
+<footer>
+  <span class="logo-ft">Bal<span style="color:var(--gold-light)">AI</span></span>
+  <p data-id="AI Assistant untuk Travel Agent Bali" data-en="AI Assistant for Bali Travel Agents">AI Assistant untuk Travel Agent Bali</p>
+  <p style="margin-top:8px">© 2025 BalAI · <a href="mailto:hello@balai.id">hello@balai.id</a></p>
+</footer>
+
+<a href="https://wa.me/6281234567890" class="wa-float" title="WhatsApp BalAI">💬</a>
+
+<script>
+// ── Language switcher ──────────────────────────────────────────────────────
+const L = { val: 'id' };
+function setLang(lang) {
+  L.val = lang;
+  document.querySelectorAll('[data-id]').forEach(el => {
+    const t = el.getAttribute('data-' + lang);
+    if (!t) return;
+    if (el.tagName === 'INPUT') { el.placeholder = t; return; }
+    if (el.tagName === 'OPTION') { el.textContent = t; return; }
+    el.innerHTML = t;
+  });
+  document.getElementById('btn-id').classList.toggle('active', lang === 'id');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('demoInput').placeholder = lang === 'id' ? 'Ketik pertanyaan kamu...' : 'Type your question...';
+  document.querySelectorAll('.qr-btn').forEach(b => { const t = b.getAttribute('data-'+lang); if(t) b.textContent = t; });
+  document.getElementById('demoStatus').textContent = lang === 'id' ? '● Online — Membalas dalam detik' : '● Online — Replies in seconds';
+}
+
+// ── Contact / WA ──────────────────────────────────────────────────────────
+function openWA() {
+  const name = document.getElementById('fName').value.trim();
+  const wa   = document.getElementById('fWA').value.trim();
+  const biz  = document.getElementById('fBiz').value.trim();
+  const plat = document.getElementById('fPlatform').value;
+  const msg  = encodeURIComponent(`Halo BalAI! Saya ingin info lebih lanjut.\n\nNama: ${name||'-'}\nWA: ${wa||'-'}\nBisnis: ${biz||'-'}\nPlatform: ${plat}`);
+  window.open(`https://wa.me/6281234567890?text=${msg}`, '_blank');
+}
+
+// ── FAQ accordion ─────────────────────────────────────────────────────────
+function toggleFaq(el) {
+  const item = el.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// ── Demo AI chat ──────────────────────────────────────────────────────────
+const chatHistory = [];
+const API_URL = '/api/chat';
+
+function addMsg(text, type, time) {
+  const msgs = document.getElementById('demoMessages');
+  const d = document.createElement('div');
+  d.className = 'dmsg ' + type;
+  const t = time || (L.val === 'id' ? 'Baru saja' : 'Just now');
+  d.innerHTML = `<div class="dmsg-bubble">${text.replace(/\n/g,'<br>')}</div><div class="dmsg-time">${t}</div>`;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('demoMessages');
+  const d = document.createElement('div');
+  d.className = 'dmsg bot';
+  d.id = 'typingIndicator';
+  d.innerHTML = '<div class="typing-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+async function sendDemo() {
+  const inp = document.getElementById('demoInput');
+  const btn = document.getElementById('sendBtn');
+  const msg = inp.value.trim();
+  if (!msg) return;
+
+  addMsg(msg, 'user');
+  chatHistory.push({ role: 'user', content: msg });
+  inp.value = '';
+  btn.disabled = true;
+  document.getElementById('quickReplies').style.display = 'none';
+  showTyping();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: chatHistory })
+    });
+
+    removeTyping();
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      addMsg(err.error || (L.val === 'id' ? 'Maaf, terjadi kesalahan. Coba lagi ya!' : 'Sorry, an error occurred. Please try again!'), 'bot');
+    } else {
+      const data = await res.json();
+      const reply = data.reply || '';
+      addMsg(reply, 'bot');
+      chatHistory.push({ role: 'assistant', content: reply });
+      if (data.provider) {
+        document.getElementById('providerTag').textContent = `powered by ${data.provider}`;
+      }
+    }
+  } catch {
+    removeTyping();
+    addMsg(L.val === 'id'
+      ? 'Tidak bisa terhubung ke server AI. Pastikan server sudah berjalan ya!'
+      : 'Cannot connect to AI server. Please make sure the server is running!', 'bot');
+  }
+
+  btn.disabled = false;
+  inp.focus();
+}
+
+function sendQR(btn) {
+  const t = btn.getAttribute('data-' + L.val) || btn.textContent;
+  document.getElementById('demoInput').value = t;
+  sendDemo();
+}
+</script>
+</body>
+</html>

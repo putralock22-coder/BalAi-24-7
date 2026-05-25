@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node server.js)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3000/api/health\" -Method GET)"
+    ]
+  }
+}
